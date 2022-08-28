@@ -2,19 +2,16 @@
 
 pragma solidity ^0.8.0;
 contract Blackjack {
-    uint public player1 = 0;
-    uint public player2 = 0;
+    uint player1 = 0;
+    uint player2 = 0;
     uint public bank = 0;    
     bool nowplaying1 = true;
     bool firstround = true;
     bool consensus = true;
     bool Imt21 = false;
-    string aax = "";
-    uint t;
+    uint randomnumber;
 
     bool endgame1 = false;
-    bool endgame2 = false;
-
     uint constant fee = 4;
 
     address p1;
@@ -26,33 +23,42 @@ contract Blackjack {
 
     uint public maxbet = 1000000000000000000;
 
-function random() internal view returns (uint) {
-    uint randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 10;
+function random() private{
+    randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 10;
     randomnumber = randomnumber + 1;
-    return randomnumber;
 }
 
 function endgame() public{
 require(consensus == true, "set the same bet. Use 'equalize'");
-if(msg.sender == p1){
-        if(endgame1 == false)
-            {endgame1 = true;}
-        else{
-            require(endgame2 == true, "you've already agreed to end game. Another player must agree it too");
-            setwinner();
-        }
+if(endgame1 == false){
+    if(msg.sender == p1){
+        endgame1 = true;
     }
-else{
-require(msg.sender == p2, "play from 1 account");
-     if(endgame2 == false)
-            {endgame2 = true;}
-        else{
-            require(endgame1 == true, "you've already agreed to end game. Another player must agree it too");
-            setwinner() ;
-        }
+    else{
+        require(msg.sender == p2, "Do not interfere with the gameplay from third-party accounts");
+        endgame1 = true;
     }
 }
+else{
+    if(msg.sender == p1){
+        setwinner();
+        }
+    else{
+         require(msg.sender == p2, "Do not interfere with the gameplay from third-party accounts");
+         setwinner();
+        }   
+}
+}
 
+function scores1() public view returns(uint){
+    require(msg.sender == p1, "you can check only your scores");
+    return(player1);
+}
+
+function scores2() public view returns(uint){
+    require(msg.sender == p2, "you can check only your scores");
+    return(player2);
+}
 
 function setwinner() private{
 if(player1 > player2){
@@ -77,16 +83,15 @@ else{
     }
 }
     else{
-        uint randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 10;
-        randomnumber = randomnumber + 1;
+        random();
         player1 + randomnumber;
         player2 + randomnumber;
-        setwinner;
-        aax = "The same number of points were scored. The winner was determined by redrawing the card";
+        setwinner();
     }
-    clean();
 }
+clean();
 }
+
 modifier accrq(){
     if(firstround == true){
         if(nowplaying1 == false){
@@ -137,10 +142,8 @@ event Paid(address indexed _from, uint _amount, uint _timestamp);
 
 function takecard() public payable accrq {
       require(consensus == true, "please, use function 'equalize' to return debt");
+      random();
       endgame1 = false;
-      endgame2 = false;
-      uint randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % 10;
-        randomnumber = randomnumber + 1;
         bet1 = bet1++;
      if(firstround == true){
        if(nowplaying1 == true){
@@ -227,10 +230,10 @@ function stand() public payable accrq {
     //Изменить максимальную ставку
     function changeMaxBet(uint maxbetEth) public{
         require(firstround = true, "you can't change max bet during game");
-        maxbet = maxbetEth * 1000000000000000000;   
+        require(msg.sender.balance + 1000000 >= maxbetEth);
+           maxbet = maxbetEth * 1000000000000000000;   
     }
 
-function td() public view returns(uint){return(t);}
 
 function clean() private{
     player1 = 0;
@@ -240,10 +243,8 @@ function clean() private{
      firstround = true;
      consensus = true;
      Imt21 = false;
-     aax = "";
 
      endgame1 = false;
-     endgame2 = false;
      p1;
      p2;
 
